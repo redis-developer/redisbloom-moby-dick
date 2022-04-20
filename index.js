@@ -1,47 +1,50 @@
+import { readFileSync } from 'fs';
 import { createClient } from 'redis';
 
 const REDIS_SET_KEY = "mobydick:words:set"
 const REDIS_BLOOM_KEY = "mobydick:words:bloom"
-const REDIS_HLL_KEY = "mobydick:words:count"
+const REDIS_HLL_KEY = "mobydick:words:hyperloglog"
 const REDIS_TOPK_KEY = "mobydick:words:topk"
 
+// Create a client and connect to Redis (default 127.0.0.1:6379 no password).
 const client = createClient();
-
 await client.connect();
-await client.del('mybloom');
-await client.bf.reserve('mybloom', 0.01, 1000);
 
+// Clean up from any previous run...
 await Promise.all([
-  client.bf.add('mybloom', 'leibale'),
-  client.bf.add('mybloom', 'simon'),
-  client.bf.add('mybloom', 'guy'),
-  client.bf.add('mybloom', 'suze'),
-  client.bf.add('mybloom', 'brian'),
-  client.bf.add('mybloom', 'steve'),
-  client.bf.add('mybloom', 'kyle'),
-  client.bf.add('mybloom', 'josefin'),
-  client.bf.add('mybloom', 'alex'),
-  client.bf.add('mybloom', 'nava'),
+  client.del(REDIS_SET_KEY),
+  client.del(REDIS_BLOOM_KEY),
+  client.del(REDIS_HLL_KEY),
+  client.del(REDIS_TOPK_KEY)
 ]);
 
-console.log('Added members to Bloom Filter.');
+// Initialize Bloom Filter and Top K.
+await Promise.all([
+  client.bf.reserve(REDIS_BLOOM_KEY, 0.01, 1000),
+  client.topK.reserve(REDIS_TOPK_KEY, 10)
+]);
 
-// Check whether a member exists with the BF.EXISTS command.
-const simonExists = await client.bf.exists('mybloom', 'simon');
-console.log(`simon ${simonExists ? 'may' : 'does not'} exist in the Bloom Filter.`);
+// Process the file of words.
+const mobyDickWords = readFileSync('moby_dick_just_words.txt', 'utf-8').split(' ');
+for (const word of mobyDickWords) {
+  const lowerWord = word.trim().toLowerCase();
+  await Promise.all([
+    client.sAdd(REDIS_SET_KEY, lowerWord),
+    client.bf.add(REDIS_BLOOM_KEY, lowerWord),
+    client.pfAdd(REDIS_HLL_KEY, lowerWord),
+    client.topK.add(REDIS_TOPK_KEY, lowerWord)
+  ]);
+  console.log(lowerWord);
+}
 
-
-// Get stats for the Bloom Filter with the BF.INFO command:
-const info = await client.bf.info('mybloom');
-// info looks like this:
-//
-//  {
-//    capacity: 1000,
-//    size: 1531,
-//    numberOfFilters: 1,
-//    numberOfInsertedItems: 12,
-//    expansionRate: 2
-//  }
-console.log(info);
-
+// Get some stats...
+console.log(`There are ${await client.sCard(REDIS_SET_KEY)} distinct words in the Redis Set.`);
+console.log(`The Redis Set uses ${await client.memoryUsage(REDIS_SET_KEY) / 1024}kb of memory.`);
+console.log(`The Redis Hyperloglog counted ${await client.pfCount(REDIS_HLL_KEY)} distinct words.`);
+console.log(`The Redis Hyperloglog uses ${await client.memoryUsage(REDIS_HLL_KEY) / 1024}kb of memory.`);
+console.log(`The Redis Bloom Filter uses ${await client.memoryUsage(REDIS_BLOOM_KEY) / 1024}kb of memory.`);
+console.log("The top 10 words are:")
+// TODO add the option to get the counts...
+console.log(await client.topK.list(REDIS_TOPK_KEY));
+// Release Redis connection.
 await client.quit();
