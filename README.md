@@ -69,9 +69,14 @@ $ npm start
 
 The application will log each word from the file `moby_dick_just_words.txt` to the console as it updates the following data structures in Redis with that word:
 
-TODO data structure type and its key...
+* A [Set](https://redis.io/docs/manual/data-types/data-types-tutorial/#sets) whose key is `mobydick:words:set`.
+* A [Bloom Filter](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:bloom`.
+* A [Hyperloglog](https://redis.io/docs/manual/data-types/data-types-tutorial/#hyperloglogs) whose key is `mobydick:words:hyperloglog`.
+* A [Top-K](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:topk`.
 
-Once done, it will print out some summary statistics about the different data structures, which look like this:
+The Set and Hyperloglog are built into Redis, the Bloom Filter and Top-K are additional capabilities added by the RedisBloom module that is part of Redis Stack.
+
+Once all the words have been loaded into these data structures, the code then prints out some summary statistics about each.  Here's some example output:
 
 ```
 There are 18270 distinct words in the Redis Set.
