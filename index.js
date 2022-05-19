@@ -20,7 +20,7 @@ await Promise.all([
 
 // Initialize Bloom Filter and Top K.
 await Promise.all([
-  client.bf.reserve(REDIS_BLOOM_KEY, 0.01, 1000),
+  client.bf.reserve(REDIS_BLOOM_KEY, 0.01, 20000),
   client.topK.reserve(REDIS_TOPK_KEY, 10)
 ]);
 
@@ -44,12 +44,7 @@ console.log(`The Redis Hyperloglog counted ${await client.pfCount(REDIS_HLL_KEY)
 console.log(`The Redis Hyperloglog uses ${await client.memoryUsage(REDIS_HLL_KEY) / 1024}kb of memory.`);
 console.log(`The Redis Bloom Filter uses ${await client.memoryUsage(REDIS_BLOOM_KEY) / 1024}kb of memory.`);
 console.log("The top 10 words are:")
-// TODO add the option to get the counts... when this is available in the next
-// node-redis release:
-// console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
-console.log(await client.topK.list(REDIS_TOPK_KEY));
-// Use sendCommand to access 'withcount' option until node-redis supports this:
-console.log(await client.sendCommand(['topk.list', REDIS_TOPK_KEY, 'withcount']));
+console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 
 // Release Redis connection.
 await client.quit();
