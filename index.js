@@ -1,13 +1,16 @@
 import { readFileSync } from 'fs';
 import { createClient } from 'redis';
 
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const REDIS_SET_KEY = "mobydick:words:set"
 const REDIS_BLOOM_KEY = "mobydick:words:bloom"
 const REDIS_HLL_KEY = "mobydick:words:hyperloglog"
 const REDIS_TOPK_KEY = "mobydick:words:topk"
 
-// Create a client and connect to Redis (default 127.0.0.1:6379 no password).
-const client = createClient();
+// Create a client and connect to Redis.
+const client = createClient({
+  url: REDIS_URL
+});
 await client.connect();
 
 // Clean up from any previous run...
