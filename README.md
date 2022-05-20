@@ -74,7 +74,7 @@ The application will log each word from the file `moby_dick_just_words.txt` to t
 * A [Hyperloglog](https://redis.io/docs/manual/data-types/data-types-tutorial/#hyperloglogs) whose key is `mobydick:words:hyperloglog`.
 * A [Top-K](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:topk`.
 
-The Set and Hyperloglog are built into Redis, the Bloom Filter and Top-K are additional capabilities added by the RedisBloom module that is part of Redis Stack.
+The Set and Hyperloglog are built into Redis, the Bloom Filter and Top-K are additional capabilities added by the [RedisBloom module](https://redis.io/docs/stack/bloom/) that is part of [Redis Stack](https://redis.io/docs/stack/).
 
 Once all the words have been loaded into these data structures, the code then prints out some summary statistics about each.  Here's some example output:
 
@@ -100,6 +100,10 @@ The top 10 words are:
 ```
 
 As the Hyperloglog and Bloom Filter are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
+
+## How it Works
+
+TODO
 
 ## Licensing
 
