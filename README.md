@@ -182,8 +182,8 @@ console.log("The top 10 words are:")
 console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 ```
 
-* The [`SCARD`](https://redis.io/commands/scard/) command gives us the cardinality or number of elements in a Set.  As the set keeps all of the data, it takes up more memory than the Bloom Filter but returns an accurate word count.
-* TODO [`PFCOUNT`](https://redis.io/commands/pfcount/)
+* The [`SCARD`](https://redis.io/commands/scard/) command gives us the cardinality or number of elements in a Set.  As the set keeps all of the data, it takes up more memory than the Hyperloglog or Bloom Filter but returns an accurate word count.
+* [`PFCOUNT`](https://redis.io/commands/pfcount/) returns an approximation of the number of distinct items added to the Hyperloglog.  
 * TODO [`TOPK.LIST`](https://redis.io/commands/topk.list/) with the `WITHCOUNT` modifier TODO...
 * Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog and Bloom Filter take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
 
