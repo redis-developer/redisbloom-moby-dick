@@ -2,12 +2,14 @@
 
 TODO
 
-covered in the stream:
+We'll compare and contrast the following Redis data structures:
 
-* set
-* compared set with bloom filter from perspective of space/accuracy, no lookups in bloom filter
-* hyperloglog for counting things approximately
-* top k
+* [Set](): TODO
+* [Bloom Filter](): TODO
+* [Hyperloglog](): TODO
+* [Top-K](): TODO
+
+The Set and Hyperloglog are built into core Redis, to use the Bloom Filter and Top K data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [Redis Bloom module](https://github.com/RedisBloom/RedisBloom).
 
 ## Prerequisites
 
@@ -186,6 +188,15 @@ console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 * [`PFCOUNT`](https://redis.io/commands/pfcount/) returns an approximation of the number of distinct items added to the Hyperloglog.  
 * [`TOPK.LIST`](https://redis.io/commands/topk.list/) with the `WITHCOUNT` modifier returns the full list of items in the Top K along with their approximated counts / scores.
 * Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog and Bloom Filter take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
+
+## Further Exercises
+
+Try using the following commands to check if a given word is in the Set, or possibly in the Bloom Filter:
+
+* [`SISMEMBER`](https://redis.io/commands/sismember/): Find out for sure whether a word is in the Set whose key is `mobydick:words:set`.  Try checking multiple words at once with [`SMISMEMER`](https://redis.io/commands/smismember/)
+* [`BF.EXISTS`](https://redis.io/commands/bf.exists/): Find out whether a word may be or is absolutely not in the Bloom Filter whose key is `mobydick:words:bloom`. Try checking multiple words at once with [`BF.MEXISTS`](https://redis.io/commands/bf.mexists/)
+
+Why can't we say with absolute certainty that a word is in the Bloom Filter? 
 
 ## Licensing
 
