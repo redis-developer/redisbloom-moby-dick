@@ -99,7 +99,7 @@ The top 10 words are:
 ]
 ```
 
-As the Hyperloglog and Bloom Filter are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
+As the Hyperloglog, Bloom Filter and Top K are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
 
 ## How it Works
 
@@ -145,7 +145,7 @@ await Promise.all([
 
 TODO explain the above...
 
-TODO explain loading the words...
+Next, we'll want to load all of the words from the word file provided, and add them to each of the data structures.  We'll do that with Node's `readFileSync` and create an array of words by splittng the file each time we see a space:
 
 ```javascript
 import { readFileSync } from 'fs';
@@ -163,7 +163,9 @@ for (const word of mobyDickWords) {
 }
 ```
 
-TODO explain getting the stats...
+TODO how we load these into the data structures.
+
+Finally, let's check out some statistics about each of the data structures...
 
 ```javascript
 console.log(`There are ${await client.sCard(REDIS_SET_KEY)} distinct words in the Redis Set.`);
@@ -174,6 +176,11 @@ console.log(`The Redis Bloom Filter uses ${await client.memoryUsage(REDIS_BLOOM_
 console.log("The top 10 words are:")
 console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 ```
+
+* The [`SCARD`](https://redis.io/commands/scard/) command gives us the cardinality or number of elements in a Set.  As the set keeps all of the data, it takes up more memory than the Bloom Filter but returns an accurate word count.
+* TODO [`PFCOUNT`]()
+* TODO TOPK command...
+* Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog and Bloom Filter take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
 
 ## Licensing
 
