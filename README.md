@@ -143,7 +143,7 @@ await Promise.all([
 ]);
 ```
 
-TODO explain the above...
+Node-Redis pipelines requests made during the same "tick", so that they're sent to Redis as a single network round trip.  Here, we're using `Promize.all` to take advantage of this.  [Read more about Redis pipelining on redis.io](https://redis.io/docs/manual/pipelining/).
 
 Next, we'll want to load all of the words from the word file provided, and add them to each of the data structures.  We'll do that with Node's `readFileSync` and create an array of words by splittng the file each time we see a space:
 
