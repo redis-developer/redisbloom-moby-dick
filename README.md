@@ -1,15 +1,8 @@
 # Experiments with Redis Bloom and the Text from "Moby Dick"
 
-TODO
+This repository contains a small example using the text from the book "Moby Dick" as a data source to compare and contrast the benefits and tradeoffs of using different Redis data structures.  We'll use the deterministic Set data structure, and three probabilistic data structures: Hyperloglog, Bloom Filter and Top-K.  These probabilistic data structures generally use hashing to be more memory efficient at the cost of some accuracy and the ability to recall data added to them.
 
-We'll compare and contrast the following Redis data structures:
-
-* [Set](): TODO
-* [Bloom Filter](): TODO
-* [Hyperloglog](): TODO
-* [Top-K](): TODO
-
-The Set and Hyperloglog are built into core Redis, to use the Bloom Filter and Top K data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [Redis Bloom module](https://github.com/RedisBloom/RedisBloom).
+The Set and Hyperloglog are built into core Redis, to use the Bloom Filter and Top K data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
 
 ## Prerequisites
 
@@ -50,7 +43,7 @@ If you're running Reds Stack locally, but installed it through a package manager
 If you are running Redis Stack in the cloud, you won't need to start or stop it... but you will need to set an environment variable that tells the application code where to connect to Redis.  Set the value of the `REDIS_URL` environment variable to a valid [Redis connection URL](https://github.com/redis/node-redis#usage) before starting the application.  For example:
 
 ```bash
-$ export REDIS_URL=redis://simon:sssssh@redis.mydomain.com:6390
+$ export REDIS_URL=redis://default:sssssh@redis.mydomain.com:6390
 ```
 
 ## Application Setup
@@ -119,7 +112,7 @@ const client = createClient({
 await client.connect();
 ```
 
-Next, we clean up after any previous run by deleting the Redis keys for each of the four different data types... putting these in a `Promise.all` causes Node Redis to TODO what?
+Next, we clean up after any previous run by deleting the Redis keys for each of the four different data types.
 
 ```javascript
 const REDIS_SET_KEY = "mobydick:words:set"
