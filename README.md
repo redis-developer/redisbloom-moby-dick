@@ -163,7 +163,12 @@ for (const word of mobyDickWords) {
 }
 ```
 
-TODO how we load these into the data structures.
+Before loading each word into the various data structures, we normalize it by converting it to lower case, so that `Whale` and `whale` are seen as the same word.  Having done that, we use the appropriate Redis command for each data structure:
+
+* [`SADD`](https://redis.io/commands/sadd/) adds a member to a Set, if the member already exists in the Set then nothing happens as Sets cannot contain duplicates.
+* [`BF.ADD`](https://redis.io/commands/bf.add/) adds an item to a Bloom Filter, if the item may already exist in the Bloom Filter then nothing happens, and this may sometimes be in error as this is a probabilistic data structure.
+* [`PFADD`](https://redis.io/commands/pfadd/) adds an item to a Hyperloglog, potentially updating the count of distinct items seen.  As this is a probabilistic data structure and hash collisions may occur, the count will be an approximation.
+* [`TOPK.ADD`](https://redis.io/commands/topk.add/) adds an item to a Top K, giving it an initial score of 1.  If the item already exists, the score is incremented by 1.  As this is a probabilistic data structure and hash collisions may occur, the scores will be approximations and not entirely accurate.
 
 Finally, let's check out some statistics about each of the data structures...
 
@@ -178,8 +183,8 @@ console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 ```
 
 * The [`SCARD`](https://redis.io/commands/scard/) command gives us the cardinality or number of elements in a Set.  As the set keeps all of the data, it takes up more memory than the Bloom Filter but returns an accurate word count.
-* TODO [`PFCOUNT`]()
-* TODO TOPK command...
+* TODO [`PFCOUNT`](https://redis.io/commands/pfcount/)
+* TODO [`TOPK.LIST`](https://redis.io/commands/topk.list/) with the `WITHCOUNT` modifier TODO...
 * Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog and Bloom Filter take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
 
 ## Licensing
