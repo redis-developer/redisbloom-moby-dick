@@ -54,7 +54,6 @@ for (const word of mobyDickWords) {
 
 // Get some stats...
 console.log(`The Hash uses ${Math.floor(await client.memoryUsage(REDIS_HASH_KEY) / 1024)}kb of memory.`);
-// TODO ADD STATS FOR CMS... AND LOOK UP SOME COUNTS VS HASH...
 console.log(`Example counts from the Hash:`);
 console.log(`whale: ${await client.hGet(REDIS_HASH_KEY, 'whale')}`);
 console.log(`porpoise: ${await client.hGet(REDIS_HASH_KEY, 'porpoise')}`);
@@ -73,7 +72,6 @@ console.log(`The Bloom Filter uses ${Math.floor(await client.memoryUsage(REDIS_B
 console.log('The top 10 words in the Top-K are:');
 console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 console.log(`The Top-K uses ${Math.floor(await client.memoryUsage(REDIS_TOPK_KEY) / 1024)}kb of memory.`);
-// TODO sorted set top 10...
 console.log('The top 10 words in the Sorted Set are:');
 console.log(await client.zRangeWithScores(REDIS_SORTED_SET_KEY, 0, 9, { REV: true }));
 // zrange mobydick:words:sortedset 0 9 rev withscores
