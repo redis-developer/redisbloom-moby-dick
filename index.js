@@ -30,7 +30,7 @@ await Promise.all([
 // Initialize Bloom Filter, Count-Min Sketch and Top K.
 await Promise.all([
   client.bf.reserve(REDIS_BLOOM_KEY, 0.01, 20000),
-  client.topK.reserve(REDIS_TOPK_KEY, 10),
+  client.topK.reserve(REDIS_TOPK_KEY, 10, { width: 400, depth: 10, decay: 0.9 }),
   client.cms.initByProb(REDIS_CMS_KEY, 0.001, 0.01)
 ]);
 
@@ -74,7 +74,6 @@ console.log(await client.topK.listWithCount(REDIS_TOPK_KEY));
 console.log(`The Top-K uses ${Math.floor(await client.memoryUsage(REDIS_TOPK_KEY) / 1024)}kb of memory.`);
 console.log('The top 10 words in the Sorted Set are:');
 console.log(await client.zRangeWithScores(REDIS_SORTED_SET_KEY, 0, 9, { REV: true }));
-// zrange mobydick:words:sortedset 0 9 rev withscores
 console.log(`The Sorted Set uses ${Math.floor(await client.memoryUsage(REDIS_SORTED_SET_KEY) / 1024)}kb of memory.`);
 
 // Release Redis connection.
