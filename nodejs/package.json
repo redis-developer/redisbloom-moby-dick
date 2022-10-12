@@ -1,0 +1,29 @@
+{
+  "name": "redisbloom-moby-dick",
+  "version": "0.0.1",
+  "description": "Experiments with RedisBloom and the text from Moby Dick.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "redis"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/redis-developer/redisbloom-moby-dick.git"
+  },
+  "bugs": {
+    "url": "https://github.com/redis-developer/redisbloom-moby-dick/issues"
+  },
+  "homepage": "https://github.com/redis-developer/redisbloom-moby-dick#readme",
+  "type": "module",
+  "author": "Redis Developer",
+  "license": "MIT",
+  "engines" : { 
+    "node" : ">=14.8.0" 
+  },
+  "dependencies": {
+    "redis": "^4.1.0"
+  }
+}
