@@ -35,11 +35,12 @@ top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
 with open("../moby_dick_just_words.txt", "r") as fi:
     for line in fi:
         for raw_word in line.split():
-            word = raw_word.split().lower()
+            word = raw_word.strip().lower()
             bloom_filter.add(REDIS_BLOOM_KEY, word)
             client.sadd(REDIS_SET_KEY, word)
             client.pfadd(REDIS_HLL_KEY, word)
             top_k.add(REDIS_TOPK_KEY, word)
+            print(word)
 
 
 # Get some stats...
