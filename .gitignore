@@ -5,3 +5,5 @@
 *.log
 node_modules/
 .idea/
+venv/
+dump.rdb

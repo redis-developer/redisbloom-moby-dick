@@ -28,7 +28,7 @@ await Promise.all([
 ]);
 
 // Process the file of words.
-const mobyDickWords = readFileSync('moby_dick_just_words.txt', 'utf-8').split(' ');
+const mobyDickWords = readFileSync('../moby_dick_just_words.txt', 'utf-8').split(' ');
 for (const word of mobyDickWords) {
   const lowerWord = word.trim().toLowerCase();
   await Promise.all([
