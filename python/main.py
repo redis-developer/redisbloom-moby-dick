@@ -12,22 +12,23 @@ REDIS_HLL_KEY = "mobydick:words:hyperloglog"
 REDIS_TOPK_KEY = "mobydick:words:topk"
 
 # Create a client and connect to Redis
+# Create a pipeline for bulk operations
 client = redis.Redis(REDIS_URL)
-
+pipe = client.pipeline()
 
 # Clean up from any previous run...
 
-client.delete(REDIS_SET_KEY)
-client.delete(REDIS_BLOOM_KEY)
-client.delete(REDIS_HLL_KEY)
-client.delete(REDIS_TOPK_KEY)
+pipe.delete(REDIS_SET_KEY)
+pipe.delete(REDIS_BLOOM_KEY)
+pipe.delete(REDIS_HLL_KEY)
+pipe.delete(REDIS_TOPK_KEY)
 
 # Initialize Bloom Filter and Top K.
 
-bloom_filter = client.bf()
+bloom_filter = pipe.bf()
 bloom_filter.create(REDIS_BLOOM_KEY, 0.01, 20000)
 
-top_k = client.topk()
+top_k = pipe.topk()
 top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
 
 # Process the file of words.
@@ -37,11 +38,13 @@ with open("../moby_dick_just_words.txt", "r") as fi:
         for raw_word in line.split():
             word = raw_word.strip().lower()
             bloom_filter.add(REDIS_BLOOM_KEY, word)
-            client.sadd(REDIS_SET_KEY, word)
-            client.pfadd(REDIS_HLL_KEY, word)
+            pipe.sadd(REDIS_SET_KEY, word)
+            pipe.pfadd(REDIS_HLL_KEY, word)
             top_k.add(REDIS_TOPK_KEY, word)
             print(word)
 
+# Execute the commands in pipeline
+pipe.execute()
 
 # Get some stats...
 
@@ -56,7 +59,10 @@ print(
 )
 print(f"The top 10 words are:")
 print()
-top_k_list = top_k.list(REDIS_TOPK_KEY, withcount=True)
+
+top_k.list(REDIS_TOPK_KEY, withcount=True)
+pipe_result = pipe.execute()
+top_k_list = pipe_result[-1]
 
 words = top_k_list[::2]
 freq = top_k_list[1::2]

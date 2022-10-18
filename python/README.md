@@ -38,7 +38,7 @@ Once you're done, you can stop Redis Stack like this:
 $ docker-compose down
 ```
 
-If you're running Reds Stack locally, but installed it through a package manager, make sure that it is running.  See the [instructions for your package manager](https://redis.io/docs/stack/get-started/install/) for details.
+If you're running Redis Stack locally, but installed it through a package manager, make sure that it is running.  See the [instructions for your package manager](https://redis.io/docs/stack/get-started/install/) for details.
 
 If you are running Redis Stack in the cloud, you won't need to start or stop it... but you will need to set an environment variable that tells the application code where to connect to Redis.  Set the value of the `REDIS_URL` environment variable to a valid [Redis connection URL](https://github.com/redis/node-redis#usage) before starting the application.  For example:
 
@@ -112,26 +112,28 @@ REDIS_HLL_KEY = "mobydick:words:hyperloglog"
 REDIS_TOPK_KEY = "mobydick:words:topk"
 
 # Create a client and connect to Redis
+# Create a pipeline for bulk operations
 client = redis.Redis(REDIS_URL)
+pipe = client.pipeline()
 
 ```
 
 Next, we clean up after any previous run by deleting the Redis keys for each of the four different data types.
 
 ```python
-client.delete(REDIS_SET_KEY)
-client.delete(REDIS_BLOOM_KEY)
-client.delete(REDIS_HLL_KEY)
-client.delete(REDIS_TOPK_KEY)
+pipe.delete(REDIS_SET_KEY)
+pipe.delete(REDIS_BLOOM_KEY)
+pipe.delete(REDIS_HLL_KEY)
+pipe.delete(REDIS_TOPK_KEY)
 ```
 
 There's no initialization / setup step required for the Set or Hyperloglog, but we do need to initalize the Bloom Filter and Top K:
 
 ```python
-bloom_filter = client.bf()
+bloom_filter = pipe.bf()
 bloom_filter.create(REDIS_BLOOM_KEY, 0.01, 20000)
 
-top_k = client.topk()
+top_k = pipe.topk()
 top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
 ```
 
@@ -141,11 +143,12 @@ Next, we'll want to load all of the words from the word file provided, and add t
 with open("../moby_dick_just_words.txt", "r") as fi:
     for line in fi:
         for raw_word in line.split():
-            word = raw_word.split().lower()
+            word = raw_word.strip().lower()
             bloom_filter.add(REDIS_BLOOM_KEY, word)
-            client.sadd(REDIS_SET_KEY, word)
-            client.pfadd(REDIS_HLL_KEY, word)
+            pipe.sadd(REDIS_SET_KEY, word)
+            pipe.pfadd(REDIS_HLL_KEY, word)
             top_k.add(REDIS_TOPK_KEY, word)
+            print(word)
 ```
 
 Before loading each word into the various data structures, we normalize it by converting it to lower case, so that `Whale` and `whale` are seen as the same word.  Having done that, we use the appropriate Redis command for each data structure:
@@ -169,7 +172,10 @@ print(
 )
 print(f"The top 10 words are:")
 print()
-top_k_list = top_k.list(REDIS_TOPK_KEY, withcount=True)
+
+top_k.list(REDIS_TOPK_KEY, withcount=True)
+pipe_result = pipe.execute()
+top_k_list = pipe_result[-1]
 
 words = top_k_list[::2]
 freq = top_k_list[1::2]
