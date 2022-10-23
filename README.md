@@ -1,8 +1,8 @@
 # Experiments with Redis Bloom and the Text from "Moby Dick"
 
-This repository contains a small example using the text from the book "Moby Dick" as a data source to compare and contrast the benefits and tradeoffs of using different Redis data structures.  We'll use the deterministic Set data structure, and three probabilistic data structures: Hyperloglog, Bloom Filter and Top-K.  These probabilistic data structures generally use hashing to be more memory efficient at the cost of some accuracy and the ability to recall data added to them.
+This repository contains a small example using the text from the book "Moby Dick" as a data source to compare and contrast the benefits and tradeoffs of using different Redis data structures.  We'll use the deterministic Set data structure, and four probabilistic data structures: Hyperloglog, Bloom Filter, Top-K and Count-Min Sketch.  These probabilistic data structures generally use hashing to be more memory efficient at the cost of some accuracy and the ability to recall data added to them.
 
-The Set and Hyperloglog are built into core Redis, to use the Bloom Filter and Top K data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
+The Set and Hyperloglog are built into core Redis, to use the Bloom Filter, Top K and Count-Min Sketch data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
 
 ## Prerequisites
 

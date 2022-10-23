@@ -1,8 +1,8 @@
 # Experiments with Redis Bloom and the Text from "Moby Dick"
 
-This repository contains a small example using the text from the book "Moby Dick" as a data source to compare and contrast the benefits and tradeoffs of using different Redis data structures.  We'll use the deterministic Set data structure, and three probabilistic data structures: Hyperloglog, Bloom Filter and Top-K.  These probabilistic data structures generally use hashing to be more memory efficient at the cost of some accuracy and the ability to recall data added to them.
+This repository contains a small example using the text from the book "Moby Dick" as a data source to compare and contrast the benefits and tradeoffs of using different Redis data structures.  We'll use the deterministic Set data structure, and four probabilistic data structures: Hyperloglog, Bloom Filter, Top-K and Count-Min Sketch.  These probabilistic data structures generally use hashing to be more memory efficient at the cost of some accuracy and the ability to recall data added to them.
 
-The Set and Hyperloglog are built into core Redis, to use the Bloom Filter and Top K data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
+The Set and Hyperloglog are built into core Redis, to use the Bloom Filter, Top K and Count-Min Sketch data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
 
 ## Prerequisites
 
@@ -69,7 +69,7 @@ The application will log each word from the file `moby_dick_just_words.txt` to t
 * A [Hyperloglog](https://redis.io/docs/manual/data-types/data-types-tutorial/#hyperloglogs) whose key is `mobydick:words:hyperloglog`.
 * A [Top-K](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:topk`.
 
-The Set and Hyperloglog are built into Redis, the Bloom Filter and Top-K are additional capabilities added by the [RedisBloom module](https://redis.io/docs/stack/bloom/) that is part of [Redis Stack](https://redis.io/docs/stack/).
+The Set and Hyperloglog are built into Redis, the Bloom Filter, Top K and Count-Min Sketch are additional capabilities added by the [RedisBloom module](https://redis.io/docs/stack/bloom/) that is part of [Redis Stack](https://redis.io/docs/stack/).
 
 Once all the words have been loaded into these data structures, the code then prints out some summary statistics about each.  Here's some example output:
 
@@ -94,7 +94,7 @@ The top 10 words are:
 ]
 ```
 
-As the Hyperloglog, Bloom Filter and Top K are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
+As the Hyperloglog, Bloom Filter, Top K and Count-Min Sketch are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
 
 ## How it Works
 
@@ -110,6 +110,7 @@ REDIS_SET_KEY = "mobydick:words:set"
 REDIS_BLOOM_KEY = "mobydick:words:bloom"
 REDIS_HLL_KEY = "mobydick:words:hyperloglog"
 REDIS_TOPK_KEY = "mobydick:words:topk"
+REDIS_CMS_KEY = "mobydick:words:cms"
 
 # Create a client and connect to Redis
 # Create a pipeline for bulk operations
@@ -125,9 +126,10 @@ pipe.delete(REDIS_SET_KEY)
 pipe.delete(REDIS_BLOOM_KEY)
 pipe.delete(REDIS_HLL_KEY)
 pipe.delete(REDIS_TOPK_KEY)
+pipe.delete(REDIS_CMS_KEY)
 ```
 
-There's no initialization / setup step required for the Set or Hyperloglog, but we do need to initalize the Bloom Filter and Top K:
+There's no initialization / setup step required for the Set or Hyperloglog, but we do need to initalize the Bloom Filter, Top K and Count-Min Sketch:
 
 ```python
 bloom_filter = pipe.bf()
@@ -135,6 +137,9 @@ bloom_filter.create(REDIS_BLOOM_KEY, 0.01, 20000)
 
 top_k = pipe.topk()
 top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
+
+cms = pipe.cms()
+cms.initbydim(REDIS_CMS_KEY, 2000, 5)
 ```
 
 Next, we'll want to load all of the words from the word file provided, and add them to each of the data structures.  We'll do that with Python's `with open(...)` and create an array of words by splittng the file each time we see a space:
@@ -148,6 +153,7 @@ with open("../moby_dick_just_words.txt", "r") as fi:
             pipe.sadd(REDIS_SET_KEY, word)
             pipe.pfadd(REDIS_HLL_KEY, word)
             top_k.add(REDIS_TOPK_KEY, word)
+            cms.incrby(REDIS_CMS_KEY, [word], [1])
             print(word)
 ```
 
@@ -157,6 +163,7 @@ Before loading each word into the various data structures, we normalize it by co
 * [`BF.ADD`](https://redis.io/commands/bf.add/) adds an item to a Bloom Filter, if the item may already exist in the Bloom Filter then nothing happens, and this may sometimes be in error as this is a probabilistic data structure.
 * [`PFADD`](https://redis.io/commands/pfadd/) adds an item to a Hyperloglog, potentially updating the count of distinct items seen.  As this is a probabilistic data structure and hash collisions may occur, the count will be an approximation.
 * [`TOPK.ADD`](https://redis.io/commands/topk.add/) adds an item to a Top K, giving it an initial score of 1.  If the item already exists, the score is incremented by 1.  As this is a probabilistic data structure and hash collisions may occur, the scores will be approximations and not entirely accurate.
+* [`CMS.INCRBY`](https://redis.io/commands/cms.incrby/) Increases the count of item by increment. Multiple items can be increased with one call.
 
 Finally, let's check out some statistics about each of the data structures...
 
@@ -170,8 +177,7 @@ print(
 print(
     f"The Redis Bloom Filter uses {client.memory_usage(REDIS_BLOOM_KEY) / 1024}kb of memory."
 )
-print(f"The top 10 words are:")
-print()
+print(f"The Count-Min Sketch uses {client.memory_usage(REDIS_CMS_KEY) / 1024}kb of memory.")
 
 top_k.list(REDIS_TOPK_KEY, withcount=True)
 pipe_result = pipe.execute()
@@ -180,13 +186,19 @@ top_k_list = pipe_result[-1]
 words = top_k_list[::2]
 freq = top_k_list[1::2]
 
-frequency_dict = dict(zip(words, freq))
+top_k_frequency_dict = dict(zip(words, freq))
 
-print(frequency_dict)
+print("\nThe top 10 words by Top K are:\n", top_k_frequency_dict)
+
+cms_word_count = client.cms().query(REDIS_CMS_KEY, *words)
+cms_frequency_dict = dict(zip(words, cms_word_count))
+
+print("\nThe top 10 words by Count-Min Sketch are:\n", cms_frequency_dict)
 
 ```
 
 * The [`SCARD`](https://redis.io/commands/scard/) command gives us the cardinality or number of elements in a Set.  As the set keeps all of the data, it takes up more memory than the Hyperloglog or Bloom Filter but returns an accurate word count.
 * [`PFCOUNT`](https://redis.io/commands/pfcount/) returns an approximation of the number of distinct items added to the Hyperloglog.  
 * [`TOPK.LIST`](https://redis.io/commands/topk.list/) with the `WITHCOUNT` modifier returns the full list of items in the Top K along with their approximated counts / scores.
-* Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog and Bloom Filter take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
+* [`CMS.QUERY`](https://redis.io/commands/cms.query/) returns the count for one or more items in a sketch.
+* Using the [`MEMORY USAGE`](https://redis.io/commands/memory-usage/) command, we can see how much memory the Set, Hyperloglog, Bloom Filter, Top K and Count-Min Sketch take up in Redis.  `MEMORY USAGE` returns the memory used in bytes, so we divide by 1024 to get kilobytes.
