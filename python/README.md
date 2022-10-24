@@ -68,30 +68,25 @@ The application will log each word from the file `moby_dick_just_words.txt` to t
 * A [Bloom Filter](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:bloom`.
 * A [Hyperloglog](https://redis.io/docs/manual/data-types/data-types-tutorial/#hyperloglogs) whose key is `mobydick:words:hyperloglog`.
 * A [Top-K](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:topk`.
+* A [Count-Min Sketch](https://redis.io/docs/stack/bloom/) whose key is `mobydick:words:cms`.
 
 The Set and Hyperloglog are built into Redis, the Bloom Filter, Top K and Count-Min Sketch are additional capabilities added by the [RedisBloom module](https://redis.io/docs/stack/bloom/) that is part of [Redis Stack](https://redis.io/docs/stack/).
 
 Once all the words have been loaded into these data structures, the code then prints out some summary statistics about each.  Here's some example output:
 
 ```
-There are 18270 distinct words in the Redis Set.
-The Redis Set uses 969.828125kb of memory.
-The Redis Hyperloglog counted 18218 distinct words.
+There are 18271 distinct words in the Redis Set.
+The Redis Set uses 941.318359375kb of memory.
+The Redis Hyperloglog counted 18221 distinct words.
 The Redis Hyperloglog uses 14.0703125kb of memory.
 The Redis Bloom Filter uses 27.0703125kb of memory.
-The top 10 words are:
-[
-  { item: 'the', count: 583 },
-  { item: 'and', count: 292 },
-  { item: 'of', count: 290 },
-  { item: 'to', count: 285 },
-  { item: 'a', count: 284 },
-  { item: 'i', count: 281 },
-  { item: 'you', count: 272 },
-  { item: 'his', count: 14 },
-  { item: 'is', count: 13 },
-  { item: 'look', count: 13 }
-]
+The Count-Min Sketch uses 109.4296875kb of memory.
+
+The top 10 words by Top-K are:
+ {'the': 583, 'and': 291, 'of': 289, 'i': 284, 'whale': 282, 'a': 282, 'to': 281, 'what': 13, 'you': 12, 'look': 12}
+
+The Count-Min sketch counts for each of those words are:
+ {'the': 14179, 'and': 6322, 'of': 6464, 'i': 1988, 'whale': 922, 'a': 4614, 'to': 4518, 'what': 564, 'you': 879, 'look': 207}
 ```
 
 As the Hyperloglog, Bloom Filter, Top K and Count-Min Sketch are probabilistic data structures, your output for these may vary. You should always see 18270 distinct words in the Redis Set though, as this is a deterministic data structure.
@@ -139,7 +134,7 @@ top_k = pipe.topk()
 top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
 
 cms = pipe.cms()
-cms.initbydim(REDIS_CMS_KEY, 2000, 5)
+cms.initbyprob(REDIS_CMS_KEY, 0.001, 0.01)
 ```
 
 Next, we'll want to load all of the words from the word file provided, and add them to each of the data structures.  We'll do that with Python's `with open(...)` and create an array of words by splittng the file each time we see a space:
@@ -193,7 +188,7 @@ print("\nThe top 10 words by Top K are:\n", top_k_frequency_dict)
 cms_word_count = client.cms().query(REDIS_CMS_KEY, *words)
 cms_frequency_dict = dict(zip(words, cms_word_count))
 
-print("\nThe top 10 words by Count-Min Sketch are:\n", cms_frequency_dict)
+print("\nThe Count-Min sketch counts for each of those words are:\n", cms_frequency_dict)
 
 ```
 

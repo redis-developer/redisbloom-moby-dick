@@ -34,7 +34,7 @@ top_k = pipe.topk()
 top_k.reserve(REDIS_TOPK_KEY, 10, 8, 7, 0.9)
 
 cms = pipe.cms()
-cms.initbydim(REDIS_CMS_KEY, 2000, 5)
+cms.initbyprob(REDIS_CMS_KEY, 0.001, 0.01)
 
 # Process the file of words.
 
@@ -79,7 +79,7 @@ print("\nThe top 10 words by Top-K are:\n", top_k_frequency_dict)
 cms_word_count = client.cms().query(REDIS_CMS_KEY, *words)
 cms_frequency_dict = dict(zip(words, cms_word_count))
 
-print("\nThe top 10 words by Count-Min Sketch are:\n", cms_frequency_dict)
+print("\nThe Count-Min sketch counts for each of those words are:\n", cms_frequency_dict)
 
 # Release Redis connection.
 
