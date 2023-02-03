@@ -6,6 +6,8 @@ The Set and Hyperloglog are built into core Redis, to use the Bloom Filter, Top 
 
 Check out our [video on YouTube](https://www.youtube.com/watch?v=FAJXq5Qqc0Y) where [Justin](https://github.com/justincastilla) and [Simon](https://simonprickett.dev) talk about counting things at scale with Redis Stack, using examples from this repository.
 
+We also added some extra examples, which are currently on the [adds-other-examples](https://github.com/redis-developer/redisbloom-moby-dick/blob/adds-other-examples/README.md) branch of this repository.
+
 ## Prerequisites
 
 To try out this project yourself, you'll need:
