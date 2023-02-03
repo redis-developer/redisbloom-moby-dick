@@ -4,6 +4,8 @@ This repository contains a small example using the text from the book "Moby Dick
 
 The Set and Hyperloglog are built into core Redis, to use the Bloom Filter, Top K and Count-Min Sketch data structures, you'll need [Redis Stack](https://redis.io/docs/stack/) or the [RedisBloom module](https://github.com/RedisBloom/RedisBloom).
 
+Check out our [video on YouTube](https://www.youtube.com/watch?v=FAJXq5Qqc0Y) where [Justin](https://github.com/justincastilla) and [Simon](https://simonprickett.dev) talk about counting things at scale with Redis Stack, using examples from this repository.
+
 ## Prerequisites
 
 To try out this project yourself, you'll need:
